@@ -1,56 +1,110 @@
-# Welcome to your Expo app 👋
+# Willakuy App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+App móvil de turismo "manos libres" para Lima: detecta por GPS los lugares cercanos y reproduce relatos en audio. Construida con React Native + Expo (SDK 58) y Expo Router.
 
-## Get started
+## Requisitos
 
-1. Install dependencies
+| Herramienta    | Versión                                     |
+| -------------- | ------------------------------------------- |
+| Node.js        | 24.11.0                                     |
+| Expo SDK       | 58 (`expo ~58.0.23`)                        |
+| Expo Go en iOS | client-version 58.0.5, supported SDK 58.0.0 |
 
-   ```bash
-   npm install
-   ```
+Este proyecto está configurado para que corra sin problemas en Expo Go de iOS con esos valores. No cambies la versión de `expo` sin validar que Expo Go siga siendo compatible.
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Cómo levantar el proyecto
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+### Con Expo Go en iPhone (recomendado)
 
-### Other setup steps
+1. Instala **Expo Go** desde la App Store e inicia sesión con tu cuenta de Expo.
+2. Genera un token en [expo.dev](https://expo.dev) → Account settings → Access tokens.
+3. En **PowerShell** (no en Git Bash), dentro de `willakuy-app`:
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```powershell
+$env:EXPO_TOKEN="TOKENCITO"
+npx expo whoami
+npx expo start
+```
 
-## Learn more
+1. Escanea el QR de la terminal con la cámara del iPhone, que abre Expo Go.
 
-To learn more about developing your project with Expo, look at the following resources:
+Notas:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- `npx expo whoami` debe mostrar tu usuario. Si dice que no hay sesión, el token no se aplicó.
+- Usa PowerShell: en Git Bash/mintty el CLI entra en modo no interactivo y no muestra el QR.
+- El `EXPO_TOKEN` solo vive en esa ventana de PowerShell; hay que definirlo de nuevo en cada terminal nueva.
+- El token es secreto: no lo subas al repositorio.
+- iPhone y PC deben estar en la misma red. Si no conecta, usa `npx expo start --tunnel`.
 
-## Join the community
+### Otras plataformas
 
-Join our community of developers creating universal apps.
+```bash
+npx expo start --android   # emulador Android (o presiona "a")
+npx expo start --web       # navegador
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+El simulador de iOS solo existe en Mac.
+
+> Expo Go sirve para la interfaz, la navegación y los datos mock. Las geovallas en segundo plano, el audio en segundo plano y `react-native-maps` con Google Maps necesitan un _development build_.
+
+## Estructura del proyecto
+
+### Estructura objetivo
+
+```
+willakuy-app/
+├── src/
+│   ├── app/                  # rutas (la plantilla SDK 58 ya usa src/app)
+│   │   ├── _layout.tsx       # providers: QueryClient, i18n, tema
+│   │   ├── index.tsx         # redirige a onboarding o inicio
+│   │   ├── onboarding.tsx
+│   │   ├── permissions.tsx
+│   │   ├── (tabs)/           # index (rutas) y settings
+│   │   ├── routes/[routeId].tsx
+│   │   ├── tour/[routeId].tsx
+│   │   ├── tour/summary.tsx
+│   │   ├── places/[poiId].tsx
+│   │   └── player.tsx        # modal
+│   ├── features/
+│   │   ├── onboarding/
+│   │   ├── routes/           # components, hooks, api (+Zod), index.ts
+│   │   ├── tour/             # components, store (Zustand), tasks/geofence.task.ts
+│   │   ├── places/
+│   │   ├── player/
+│   │   └── settings/
+│   └── shared/
+│       ├── ui/               # Button, Card, BottomSheet, map/WillakuyMap.tsx
+│       ├── theme/  api/  location/  audio/  i18n/  config/  lib/
+├── assets/
+├── e2e/                      # Maestro
+├── app.config.ts             # variantes dev/qa/prod
+└── eas.json
+```
+
+Reglas de dependencia: `app/` usa `features` y `shared`; una feature no importa el interior de otra (solo su `index.ts`); `shared` nunca importa de `features`.
+
+### Estructura actual (implementada)
+
+```
+src/
+├── app/                          # rutas delgadas (solo componen pantallas)
+│   ├── _layout.tsx               # Stack + tema claro/oscuro
+│   ├── index.tsx                 # → RoutesListScreen
+│   └── routes/[routeId].tsx      # → RouteDetailScreen
+├── features/routes/
+│   ├── api/routes.api.ts         # datos mock (2 rutas de Lima)
+│   ├── components/route-card.tsx
+│   ├── hooks/                    # use-routes, use-route, use-async
+│   ├── screens/                  # lista y detalle
+│   ├── types.ts
+│   └── index.ts                  # API pública de la feature
+├── shared/
+|   |
+|   ├── ui/ (themed-text, themed-view)   theme/
+|   └── api, location, audio, i18n, config, lib   # vacías con .gitkeep
+├── e2e/                             # vacía, para Maestro
+```

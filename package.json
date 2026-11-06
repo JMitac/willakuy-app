@@ -1,5 +1,7 @@
 {
   "name": "willakuy-app",
+  "//node": "Este proyecto se trabaja con Node 24.11.0 (usar nvm/fnm: nvm use 24.11.0).",
+  "//expo-go-ios": "Configurado para Expo Go en iOS con client-version: 58.0.5 y supported sdk: 58.0.0 (Expo SDK 58). No cambiar la version de expo sin validar que Expo Go en iPhone siga siendo compatible.",
   "version": "1.0.0",
   "main": "expo-router/entry",
   "dependencies": {
